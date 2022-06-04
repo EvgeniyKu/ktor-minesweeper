@@ -12,5 +12,6 @@ class Message<T: Any>(
 
 enum class MessageType(val apiKey: String) {
     GameState("game_state"),
-    Error("error")
+    Error("error"),
+    Tick("tick")
 }

@@ -7,6 +7,7 @@ fun GameController.toResponse(): GameStateResponse {
     return GameStateResponse(
         gameState = gameState.apiKey,
         score = flagsSet,
+        seconds = seconds,
         board = cells.map { row ->
             row.map { cell ->
                 GameStateResponse.Cell(
