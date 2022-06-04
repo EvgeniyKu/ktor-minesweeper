@@ -1,7 +1,8 @@
 
 class Saper {
 	#countFlag = 0;
-	constructor(element,row,col){
+	#countFlagAll = 0;
+	constructor(element){
 
 		this.element = element;
 		element.addEventListener("click",el=>{
@@ -16,6 +17,7 @@ class Saper {
 				}
 			}))
 		})
+		
 
 		document.querySelector("#panel__new-game").addEventListener("click",el=>{
 			if("difficulty" in el.target.dataset){
@@ -70,19 +72,25 @@ class Saper {
 		this.element.classList.remove("lose")
 		this.element.classList.remove("win")
 	}
+	tick(sec){
+		document.querySelector("#timer").innerHTML = sec;
+	}
 	render(arr){
 		let doc = "";
 		for(let i=0; i<arr.length;i++){
 			doc+=`<div class="row">`;
 			for(let a=0;a<arr[i].length;a++){
+
 				let isflag = arr[i][a].isFlagged?"flag":"";
+				if(arr[i][a].isFlagged) this.#countFlagAll++;
+
 				let isOpen = arr[i][a].isOpened?"open":"";
+
 				let countOfBombs = arr[i][a].countOfBombs;
 				let textOfBombs = "";
 				let classOfBombs = "";
 				if(countOfBombs) textOfBombs = countOfBombs;
 				if(countOfBombs===9) {classOfBombs = "bomb";textOfBombs="";}
-				
 				doc+=`<div class="col ${classOfBombs} ${isflag} ${isOpen}" data-row="${arr[i][a].row}" data-col="${arr[i][a].column}">${textOfBombs}</div>`;
 			}
 			doc+=`</div>`;
@@ -90,10 +98,17 @@ class Saper {
 
 		this.element.innerHTML = doc;
 	}
+	setSizeBlock(countCol){
+		let minSizeWindow = window.innerWidth<innerHeight?innerWidth:innerHeight;
+		let size = +(minSizeWindow-10-countCol)/countCol;
+		this.element.style.setProperty("--var-size",size+"px");
+	}
 }
 
 
 let game = new Saper(document.querySelector("#main"));
+
+
 const urlWs = "ws://192.168.0.12:8080/minesweeper-socket";
 const socket = new WebSocket(urlWs);
 
@@ -107,6 +122,10 @@ socket.onerror = function(data){
 socket.onmessage = function(message){
 	data = JSON.parse(message.data);
 	console.log(data);
+
+	if(data["messageType"] === "tick") {
+		game.tick(data["body"]["seconds"]);
+	}
 	if(data["messageType"] !== "game_state") return null;
 	if(data["body"]["gameState"] === "lose"){
 		game.lose();

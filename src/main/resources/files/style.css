@@ -1,3 +1,6 @@
+:root {
+  --var-size: 50px;
+}
 /* Указываем box sizing */
 *,
 *::before,
@@ -94,8 +97,8 @@ body{
 
 }
 .col {
-  width:  40px;
-  height:  40px;
+  width:  var(--var-size);
+  height:  var(--var-size);
   background:  #999;
   margin: 1px;
   font-size: 30px;
@@ -123,7 +126,9 @@ body{
 }
 
 .bomb {
-  background: red;
+  background: url("img/bomb-solid.svg") red no-repeat;
+  background-size: 50%;
+  background-position:  center;
 }
 .lose::after {
   content: "";
