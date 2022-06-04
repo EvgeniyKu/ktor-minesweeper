@@ -8,8 +8,10 @@ import com.example.models.request.StartGameBody
 import com.example.models.response.Message
 import com.example.models.response.MessageType
 import com.example.models.response.ErrorResponse
+import com.example.models.response.TickResponse
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
@@ -25,29 +27,53 @@ class ServerGameController {
 
     suspend fun onNewConnection(connection: Connection) {
         connections += connection
+        println("connect new user. Users connected: ${connections.size}")
         with(connection.session) {
             sendMessage(MessageType.GameState, gameController.toResponse())
             try {
-                for (frame in incoming) {
-                    frame as? Frame.Text ?: continue
-                    val text = frame.readText()
-                    val successfullyHandled = try {
-                        mutex.withLock {
-                            handleIncomingMessage(text)
+                val tickerJob = launch {
+                    while (true) {
+                        if (gameController.running) {
+                            sendMessage(MessageType.Tick, TickResponse(gameController.seconds))
                         }
-                        true
-                    } catch (t: Throwable) {
-                        sendMessage(MessageType.Error, ErrorResponse(t.message ?: t.toString()))
-                        false
-                    }
-                    if (successfullyHandled) {
-                        connections.forEach { connection ->
-                            connection.session.sendMessage(MessageType.GameState, gameController.toResponse())
-                        }
+                        delay(1000)
                     }
                 }
+                performMessages()
+                tickerJob.cancel()
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                println("throws error: $t")
+                t.printStackTrace()
             } finally {
                 connections -= connection
+                println("disconnect user. Users connected: ${connections.size}")
+                if (connections.isEmpty()) {
+                    gameController.close()
+                    gameController = GameController(GameSettings.EASY)
+                }
+            }
+        }
+    }
+
+    private suspend fun WebSocketServerSession.performMessages() {
+        for (frame in incoming) {
+            frame as? Frame.Text ?: continue
+            val text = frame.readText()
+            val successfullyHandled = try {
+                mutex.withLock {
+                    handleIncomingMessage(text)
+                }
+                true
+            } catch (t: Throwable) {
+                sendMessage(MessageType.Error, ErrorResponse(t.message ?: t.toString()))
+                false
+            }
+            if (successfullyHandled) {
+                connections.forEach { connection ->
+                    connection.session.sendMessage(MessageType.GameState, gameController.toResponse())
+                }
             }
         }
     }
@@ -75,6 +101,7 @@ class ServerGameController {
                     "hard" -> GameSettings.EXPERT
                     else -> throw IllegalArgumentException("unknown difficulty: ${body.difficulty}. Expected: easy, medium, hard")
                 }
+                gameController.close()
                 gameController = GameController(difficulty)
             }
             Action.OpenCell -> {

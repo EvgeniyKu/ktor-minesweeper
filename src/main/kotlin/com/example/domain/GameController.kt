@@ -1,8 +1,13 @@
 package com.example.domain
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.Closeable
 import kotlin.random.Random
 
-class GameController(private val options: GameSettings) {
+class GameController(private val options: GameSettings): Closeable {
     /** Number of rows in current board */
     val rows: Int
         get() = options.rows
@@ -38,6 +43,8 @@ class GameController(private val options: GameSettings) {
     private var time = 0L
     /** The time when user starts the game by opening or flagging any cell */
     private var startTime = 0L
+
+    private var tickerJob: Job? = null
 
     /** The game board of size (rows * columns) */
     val cells = Array(options.rows) { row ->
@@ -123,37 +130,8 @@ class GameController(private val options: GameSettings) {
         }
     }
 
-    /**
-     * Mine seeker functionality
-     *
-     * When called on opened cell with at least one bomb near it, and if number of flags around cell
-     * is the same as number of bombs, opens all cells around given with [openCell].
-     *
-     * If game is finished, or cell does not meet the requirements above, does nothing
-     *
-     * @param cell Cell to toggle flag, **must** belong to current game board
-     */
-    fun openNotFlaggedNeighbors(cell: Cell) {
-        if (finished || !cell.isOpened || cell.bombsNear == 0) return
-
-        val neighbors = neighborsOf(cell)
-        val flagsNear = neighbors.count() { it.isFlagged }
-        if (cell.bombsNear == flagsNear) {
-            neighbors.forEach { openCell(it) }
-        }
-    }
-
-    /**
-     * Provides current **monotonic** time to game
-     * Should be called in timer loop
-     *
-     * @param timeMillis Current time in milliseconds
-     */
-    fun onTimeTick(timeMillis: Long) {
-        time = timeMillis
-        if (running) {
-            seconds = ((time - startTime) / 1000L).toInt()
-        }
+    override fun close() {
+        tickerJob?.cancel()
     }
 
     private fun putBomb() {
@@ -218,6 +196,7 @@ class GameController(private val options: GameSettings) {
     }
 
     private fun endGame(win: Boolean) {
+        stopTicker()
         gameState = if (win) {
             GameState.WIN
         } else {
@@ -228,7 +207,8 @@ class GameController(private val options: GameSettings) {
     private fun startGame() {
         if (!finished) {
             seconds = 0
-            startTime = time
+            startTime = System.currentTimeMillis()
+            startTicker()
             gameState = GameState.RUNNING
         }
     }
@@ -238,6 +218,34 @@ class GameController(private val options: GameSettings) {
         firstCell.hasBomb = false
         neighborsOf(firstCell).forEach {
             it.bombsNear -= 1
+        }
+    }
+
+    private fun startTicker() {
+        if (tickerJob != null) return
+        tickerJob = GlobalScope.launch {
+            while (true) {
+                delay(100)
+                onTimeTick(System.currentTimeMillis())
+            }
+        }
+    }
+
+    private fun stopTicker() {
+        tickerJob?.cancel()
+        tickerJob = null
+    }
+
+    /**
+     * Provides current **monotonic** time to game
+     * Should be called in timer loop
+     *
+     * @param timeMillis Current time in milliseconds
+     */
+    private fun onTimeTick(timeMillis: Long) {
+        time = timeMillis
+        if (running) {
+            seconds = ((time - startTime) / 1000L).toInt()
         }
     }
 

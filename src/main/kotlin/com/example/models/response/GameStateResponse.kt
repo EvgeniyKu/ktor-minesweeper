@@ -8,6 +8,8 @@ data class GameStateResponse(
     val gameState: String, // could be: not_started, running, win, lose
     @SerialName("score")
     val score: Int,
+    @SerialName("seconds")
+    val seconds: Int,
     @SerialName("board")
     val board: List<List<Cell>>
 ) {
