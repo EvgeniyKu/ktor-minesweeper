@@ -148,3 +148,35 @@ body{
   position: absolute;
   background: #9dff0099;
 }
+
+.wrapper {
+  position: relative;
+
+}
+#cursor_users {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.user {
+  position: absolute;
+  transition: 0.5s;
+  display: block;
+  width: 20px;
+  height: 20px;
+  background: #ffffffc7;
+  border: 1px solid #999;
+  opacity: .8;
+  border-radius: 100%;
+  transform: translate(-50%, -50%);
+}
+.user::before{
+  content: attr(data-username);
+  font-size: 12px;
+  color: black;
+  background: white;
+  padding: 0px 5px;
+  position: absolute;
+  left: 25px;
+
+}
