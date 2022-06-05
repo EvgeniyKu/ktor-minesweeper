@@ -57,6 +57,10 @@ class GameController(private val options: GameSettings) {
     private var isFirstOpenedCell = true
 
     init {
+        // validate options
+        check(options.rows * options.columns > bombs) {
+            "too many bombs"
+        }
         // Put [options.mines] bombs on random positions
         for (i in 1..options.mines) {
             putBomb()
