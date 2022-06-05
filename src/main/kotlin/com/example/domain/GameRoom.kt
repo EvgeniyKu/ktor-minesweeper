@@ -2,16 +2,12 @@ package com.example.domain
 
 import com.example.Connection
 import com.example.mappers.toResponse
-import com.example.models.request.Action
-import com.example.models.request.CellPositionBody
-import com.example.models.request.MousePositionBody
-import com.example.models.request.StartGameBody
+import com.example.models.request.*
 import com.example.models.response.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -21,7 +17,7 @@ import kotlinx.serialization.json.*
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
-class ServerGameController {
+class GameRoom {
     private val connections = Collections.synchronizedSet<Connection?>(LinkedHashSet())
     private val gameUpdateMutex = Mutex()
     private var gameController = GameController(GameSettings.EASY)
@@ -121,9 +117,7 @@ class ServerGameController {
 
         when(action) {
             Action.StartGame -> {
-                val body = kotlin.runCatching {
-                    Json.decodeFromJsonElement<StartGameBody>(bodyElement)
-                }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement")
+                val body = parseJsonBody<StartGameBody>(bodyElement)
                 val difficulty = when(body.difficulty) {
                     "easy" -> GameSettings.EASY
                     "medium" -> GameSettings.MEDIUM
@@ -132,18 +126,18 @@ class ServerGameController {
                 }
                 gameController = GameController(difficulty)
             }
+            Action.StartCustomGame -> {
+                val body = parseJsonBody<StartCustomGameBody>(bodyElement)
+                gameController = GameController(GameSettings(body.rows, body.columns, body.bombs))
+            }
             Action.OpenCell -> {
-                val body = kotlin.runCatching {
-                    Json.decodeFromJsonElement<CellPositionBody>(bodyElement)
-                }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement")
+                val body = parseJsonBody<CellPositionBody>(bodyElement)
                 val cell = gameController.cellAt(body.row, body.column)
                     ?: throw IllegalArgumentException("missing cell at row: ${body.row} and column ${body.column}")
                 gameController.openCell(cell)
             }
             Action.SetFlag -> {
-                val body = kotlin.runCatching {
-                    Json.decodeFromJsonElement<CellPositionBody>(bodyElement)
-                }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement")
+                val body = parseJsonBody<CellPositionBody>(bodyElement)
                 val cell = gameController.cellAt(body.row, body.column)
                     ?: throw IllegalArgumentException("missing cell at row: ${body.row} and column ${body.column}")
                 gameController.toggleFlag(cell)
@@ -157,12 +151,15 @@ class ServerGameController {
 
     @kotlin.jvm.Throws(Throwable::class)
     private suspend fun WebSocketServerSession.handleMousePositionAction(bodyElement: JsonElement) {
-        val body = kotlin.runCatching {
-            Json.decodeFromJsonElement<MousePositionBody>(bodyElement)
-        }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement, expected: fields: x: Int, y: Int")
-
+        val body = parseJsonBody<MousePositionBody>(bodyElement, " expected: fields: x: Int, y: Int")
         val id = connections.first { it.session == this }.connectionId
         positionsController.onNewPosition(id, body.x, body.y)
+    }
+
+    private inline fun <reified T: Any> parseJsonBody(bodyElement: JsonElement, errorMessage: String = ""): T {
+        return kotlin.runCatching {
+            Json.decodeFromJsonElement<T>(bodyElement)
+        }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement. $errorMessage")
     }
 
     private suspend inline fun <reified T: Any> WebSocketServerSession.sendMessageForAll(
