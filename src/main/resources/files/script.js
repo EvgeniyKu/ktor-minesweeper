@@ -109,15 +109,15 @@ class Presenter {
 				break;
 
 				case "player_positions":
-					for(let item in data["body"]["positions"]){
-						let players = data["body"]["positions"][item];
-						let valuePlayer = self.searchPlayers(players.player.id);
-						if(valuePlayer){
-							self.view.renderCursorUser(players.player.id,players.x,players.y,)
-						}else{
-							self.addPlayers(players);
-						}
+				for(let item in data["body"]["positions"]){
+					let players = data["body"]["positions"][item];
+					let valuePlayer = self.searchPlayers(players.player.id);
+					if(valuePlayer){
+						self.view.renderCursorUser(players.player.id,players.x,players.y,)
+					}else{
+						self.addPlayers(players);
 					}
+				}
 				break;
 			}
 
@@ -166,6 +166,8 @@ class Presenter {
 
 		this.view.elApp.querySelector("#panel__new-game").addEventListener("click",el=>{
 			if("difficulty" in el.target.dataset){
+				this.model.myFlag = 0;
+				this.view.myFlag = 0
 				socket.send(JSON.stringify(
 				{
 					"action": "startGame",
@@ -198,7 +200,19 @@ class Presenter {
 					"column": target.dataset.col 
 				}
 			}));
-		})
+		});
+		this.view.elApp.querySelector(".panel__custom-name-game button").addEventListener("click",e=>{
+			let inputs = this.view.elApp.querySelectorAll(".panel__custom-name-game input");
+			let params = {};
+			for(let input of inputs){
+				params[input.id] = +input.value;
+			}
+			this.socket.send(JSON.stringify({
+				action: "startCustomGame",
+				body: params
+			}
+			))
+		});
 	}
 	boardCreate(arr){
 		this.model.countFlagAll = 0;

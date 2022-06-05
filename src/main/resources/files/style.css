@@ -178,5 +178,8 @@ body{
   padding: 0px 5px;
   position: absolute;
   left: 25px;
+}
 
+.panel__custom-name-game input {
+  width: 40px;
 }
