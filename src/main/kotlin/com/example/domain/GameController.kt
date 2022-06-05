@@ -61,6 +61,9 @@ class GameController(private val options: GameSettings) {
         check(options.rows * options.columns > bombs) {
             "too many bombs"
         }
+        check(options.rows > 0 && options.columns > 0 && options.mines > 0) {
+            "game options must be greater than 0"
+        }
         // Put [options.mines] bombs on random positions
         for (i in 1..options.mines) {
             putBomb()

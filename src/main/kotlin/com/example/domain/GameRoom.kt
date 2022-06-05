@@ -92,6 +92,7 @@ class GameRoom {
             } catch (c: CancellationException) {
                 throw c
             } catch (t: Throwable) {
+                t.printStackTrace()
                 sendMessage(MessageType.Error, ErrorResponse(t.message ?: t.toString()))
             }
         }
