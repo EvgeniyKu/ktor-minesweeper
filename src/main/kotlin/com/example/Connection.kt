@@ -5,7 +5,7 @@ import io.ktor.websocket.*
 import java.util.concurrent.atomic.AtomicLong
 
 class Connection private constructor(
-    private val connectionId: Long,
+    val connectionId: Long,
     val session: WebSocketServerSession
 ) {
 

@@ -4,14 +4,15 @@ import com.example.Connection
 import com.example.mappers.toResponse
 import com.example.models.request.Action
 import com.example.models.request.CellPositionBody
+import com.example.models.request.MousePositionBody
 import com.example.models.request.StartGameBody
-import com.example.models.response.Message
-import com.example.models.response.MessageType
-import com.example.models.response.ErrorResponse
-import com.example.models.response.TickResponse
+import com.example.models.response.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
@@ -22,8 +23,9 @@ import kotlin.collections.LinkedHashSet
 
 class ServerGameController {
     private val connections = Collections.synchronizedSet<Connection?>(LinkedHashSet())
-    private val mutex = Mutex()
+    private val gameUpdateMutex = Mutex()
     private var gameController = GameController(GameSettings.EASY)
+    private val positionsController = PlayerPositionsController()
 
     suspend fun onNewConnection(connection: Connection) {
         connections += connection
@@ -39,18 +41,36 @@ class ServerGameController {
                         delay(1000)
                     }
                 }
+                val playerPositionsJob = launch {
+                    positionsController.positions
+                        .map { it.filterKeys { it != connection.connectionId } }
+                        .distinctUntilChanged()
+                        .collect {
+                            val playerPositions = it.map { (id, position) ->
+                                PlayersPosition.Position(
+                                    x = position.x,
+                                    y = position.y,
+                                    player = Player(id)
+                                )
+                            }
+                            if (playerPositions.isNotEmpty()) {
+                                sendMessage(MessageType.PlayerPosition, PlayersPosition(playerPositions))
+                            }
+                        }
+                }
                 performMessages()
                 tickerJob.cancel()
+                playerPositionsJob.cancel()
             } catch (c: CancellationException) {
                 throw c
             } catch (t: Throwable) {
                 println("throws error: $t")
                 t.printStackTrace()
             } finally {
+                positionsController.removePlayer(connection.connectionId)
                 connections -= connection
                 println("disconnect user. Users connected: ${connections.size}")
                 if (connections.isEmpty()) {
-                    gameController.close()
                     gameController = GameController(GameSettings.EASY)
                 }
             }
@@ -61,36 +81,45 @@ class ServerGameController {
         for (frame in incoming) {
             frame as? Frame.Text ?: continue
             val text = frame.readText()
-            val successfullyHandled = try {
-                mutex.withLock {
-                    handleIncomingMessage(text)
+            try {
+                val (action, body) = parseIncomingMessage(text)
+                when(action) {
+                    Action.MousePosition -> {
+                        handleMousePositionAction(body)
+                    }
+                    else -> {
+                        gameUpdateMutex.withLock {
+                            handleGameUpdateAction(action, body)
+                        }
+                    }
                 }
-                true
+            } catch (c: CancellationException) {
+                throw c
             } catch (t: Throwable) {
                 sendMessage(MessageType.Error, ErrorResponse(t.message ?: t.toString()))
-                false
-            }
-            if (successfullyHandled) {
-                connections.forEach { connection ->
-                    connection.session.sendMessage(MessageType.GameState, gameController.toResponse())
-                }
             }
         }
     }
 
-    @kotlin.jvm.Throws(Throwable::class)
-    private fun handleIncomingMessage(text: String) {
+    private fun parseIncomingMessage(text: String): Pair<Action, JsonElement> {
         val json = kotlin.runCatching {
             Json.decodeFromString<JsonObject>(text)
         }.getOrNull() ?: throw IllegalArgumentException("Input data could not be represented as Json.")
-        val messageType = json["action"]?.jsonPrimitive?.content?.let { action ->
+
+        val action = json["action"]?.jsonPrimitive?.content?.let { action ->
             Action.values().firstOrNull { it.apiKey == action }
                 ?: throw IllegalArgumentException("Illegal action: $action. Available actions: ${Action.values()}")
         } ?: throw IllegalArgumentException("'action' argument not found")
 
         val bodyElement = json["body"] ?: throw IllegalArgumentException("not found 'body' argument")
 
-        when(messageType) {
+        return action to bodyElement
+    }
+
+    @kotlin.jvm.Throws(Throwable::class)
+    private suspend fun WebSocketServerSession.handleGameUpdateAction(action: Action, bodyElement: JsonElement) {
+
+        when(action) {
             Action.StartGame -> {
                 val body = kotlin.runCatching {
                     Json.decodeFromJsonElement<StartGameBody>(bodyElement)
@@ -101,7 +130,6 @@ class ServerGameController {
                     "hard" -> GameSettings.EXPERT
                     else -> throw IllegalArgumentException("unknown difficulty: ${body.difficulty}. Expected: easy, medium, hard")
                 }
-                gameController.close()
                 gameController = GameController(difficulty)
             }
             Action.OpenCell -> {
@@ -120,9 +148,39 @@ class ServerGameController {
                     ?: throw IllegalArgumentException("missing cell at row: ${body.row} and column ${body.column}")
                 gameController.toggleFlag(cell)
             }
-        }
+            Action.MousePosition -> throw IllegalArgumentException("action $action is not a game update action. It must be handled in other way")
+        }.let { }
+
+        sendMessageForAll(MessageType.GameState, gameController.toResponse())
+
     }
 
+    @kotlin.jvm.Throws(Throwable::class)
+    private suspend fun WebSocketServerSession.handleMousePositionAction(bodyElement: JsonElement) {
+        val body = kotlin.runCatching {
+            Json.decodeFromJsonElement<MousePositionBody>(bodyElement)
+        }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement, expected: fields: x: Int, y: Int")
+
+        val id = connections.first { it.session == this }.connectionId
+        positionsController.onNewPosition(id, body.x, body.y)
+    }
+
+    private suspend inline fun <reified T: Any> WebSocketServerSession.sendMessageForAll(
+        type: MessageType,
+        body: T,
+        excludeSelf: Boolean = false
+    )  {
+        coroutineScope {
+            connections.forEach { connection ->
+                if (excludeSelf && connection.session == this) {
+                    return@forEach
+                }
+                launch {
+                    connection.session.sendMessage(type, body)
+                }
+            }
+        }
+    }
     private suspend inline fun <reified T: Any> WebSocketServerSession.sendMessage(type: MessageType, body: T) {
         val message = Message(type.apiKey, body)
         val messageJson = Json.encodeToString(message)
