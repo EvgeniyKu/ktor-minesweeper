@@ -1,7 +1,7 @@
 package com.example.plugins
 
 import com.example.Connection
-import com.example.domain.ServerGameController
+import com.example.domain.GameRoom
 import io.ktor.server.application.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
@@ -15,7 +15,7 @@ fun Application.configureSockets() {
         masking = false
     }
     routing {
-        val gameController = ServerGameController()
+        val gameController = GameRoom()
         webSocket("/minesweeper-socket") {
             val thisConnection = Connection(this)
             gameController.onNewConnection(thisConnection)
