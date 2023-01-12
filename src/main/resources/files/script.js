@@ -282,7 +282,7 @@ class Socket {
 
 }
 
-const socket = new Socket("ws://0.0.0.0:8080/minesweeper-socket");
+const socket = new Socket("ws://5.187.4.192:5000/minesweeper-socket");
 const view = new View(document.querySelector("#app"));
 const model = new Model();
 console.log(socket);
