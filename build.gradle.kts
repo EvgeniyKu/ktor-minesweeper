@@ -4,6 +4,7 @@ val logback_version: String by project
 
 plugins {
     application
+    id("io.ktor.plugin") version "2.2.2"
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.serialization").version("1.6.21")
 }
@@ -15,6 +16,12 @@ application {
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
+}
+
+ktor {
+    fatJar {
+        archiveFileName.set("minesweeper_server.jar")
+    }
 }
 
 repositories {
