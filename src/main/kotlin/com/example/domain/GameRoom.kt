@@ -14,10 +14,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
+import org.slf4j.Logger
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
-class GameRoom {
+class GameRoom(
+    private val logger: Logger
+) {
     private val connections = Collections.synchronizedSet<Connection?>(LinkedHashSet())
     private val gameUpdateMutex = Mutex()
     private var gameController = GameController(GameSettings.EASY)
@@ -25,8 +28,8 @@ class GameRoom {
 
     suspend fun onNewConnection(connection: Connection) {
         connections += connection
-        println("connect new user. Users connected: ${connections.size}")
-        with(connection.session) {
+        logger.info("connect new user. Users connected: ${connections.size}")
+        with(connection) {
             sendMessage(MessageType.GameState, gameController.toResponse())
             try {
                 val tickerJob = launch {
@@ -60,12 +63,11 @@ class GameRoom {
             } catch (c: CancellationException) {
                 throw c
             } catch (t: Throwable) {
-                println("throws error: $t")
-                t.printStackTrace()
+                logger.error("throws error: $t", t)
             } finally {
                 positionsController.removePlayer(connection.connectionId)
                 connections -= connection
-                println("disconnect user. Users connected: ${connections.size}")
+                logger.info("disconnect user. Users connected: ${connections.size}")
                 if (connections.isEmpty()) {
                     gameController = GameController(GameSettings.EASY)
                 }
@@ -73,7 +75,7 @@ class GameRoom {
         }
     }
 
-    private suspend fun WebSocketServerSession.performMessages() {
+    private suspend fun Connection.performMessages() {
         for (frame in incoming) {
             frame as? Frame.Text ?: continue
             val text = frame.readText()
@@ -93,6 +95,7 @@ class GameRoom {
                 throw c
             } catch (t: Throwable) {
                 t.printStackTrace()
+                logger.error("failure occurs", t)
                 sendMessage(MessageType.Error, ErrorResponse(t.message ?: t.toString()))
             }
         }
@@ -114,8 +117,8 @@ class GameRoom {
     }
 
     @kotlin.jvm.Throws(Throwable::class)
-    private suspend fun WebSocketServerSession.handleGameUpdateAction(action: Action, bodyElement: JsonElement) {
-
+    private suspend fun Connection.handleGameUpdateAction(action: Action, bodyElement: JsonElement) {
+        logger.info("user $connectionId make action ${action.apiKey} with params: $bodyElement")
         when(action) {
             Action.StartGame -> {
                 val body = parseJsonBody<StartGameBody>(bodyElement)
@@ -151,10 +154,9 @@ class GameRoom {
     }
 
     @kotlin.jvm.Throws(Throwable::class)
-    private suspend fun WebSocketServerSession.handleMousePositionAction(bodyElement: JsonElement) {
+    private suspend fun Connection.handleMousePositionAction(bodyElement: JsonElement) {
         val body = parseJsonBody<MousePositionBody>(bodyElement, " expected: fields: x: Int, y: Int")
-        val id = connections.first { it.session == this }.connectionId
-        positionsController.onNewPosition(id, body.x, body.y)
+        positionsController.onNewPosition(connectionId, body.x, body.y)
     }
 
     private inline fun <reified T: Any> parseJsonBody(bodyElement: JsonElement, errorMessage: String = ""): T {
@@ -163,23 +165,23 @@ class GameRoom {
         }.getOrNull() ?: throw IllegalArgumentException("Illegal format of body: $bodyElement. $errorMessage")
     }
 
-    private suspend inline fun <reified T: Any> WebSocketServerSession.sendMessageForAll(
+    private suspend inline fun <reified T: Any> Connection.sendMessageForAll(
         type: MessageType,
         body: T,
         excludeSelf: Boolean = false
     )  {
         coroutineScope {
             connections.forEach { connection ->
-                if (excludeSelf && connection.session == this) {
+                if (excludeSelf && connection.connectionId == this@sendMessageForAll.connectionId) {
                     return@forEach
                 }
                 launch {
-                    connection.session.sendMessage(type, body)
+                    connection.sendMessage(type, body)
                 }
             }
         }
     }
-    private suspend inline fun <reified T: Any> WebSocketServerSession.sendMessage(type: MessageType, body: T) {
+    private suspend inline fun <reified T: Any> Connection.sendMessage(type: MessageType, body: T) {
         val message = Message(type.apiKey, body)
         val messageJson = Json.encodeToString(message)
         send(messageJson)

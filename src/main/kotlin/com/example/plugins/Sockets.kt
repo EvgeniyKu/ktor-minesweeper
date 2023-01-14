@@ -15,7 +15,7 @@ fun Application.configureSockets() {
         masking = false
     }
     routing {
-        val gameController = GameRoom()
+        val gameController = GameRoom(application.environment.log)
         webSocket("/minesweeper-socket") {
             val thisConnection = Connection(this)
             gameController.onNewConnection(thisConnection)

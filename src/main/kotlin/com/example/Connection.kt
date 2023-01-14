@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong
 class Connection private constructor(
     val connectionId: Long,
     val session: WebSocketServerSession
-) {
+): WebSocketServerSession by session {
 
     override fun equals(other: Any?): Boolean {
         if (other !is Connection) return false
