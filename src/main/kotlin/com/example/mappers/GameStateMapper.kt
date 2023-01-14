@@ -3,8 +3,9 @@ package com.example.mappers
 import com.example.domain.GameController
 import com.example.models.response.GameStateResponse
 
-fun GameController.toResponse(): GameStateResponse {
+fun GameController.toResponse(roomName: String): GameStateResponse {
     return GameStateResponse(
+        roomName = roomName,
         gameState = gameState.apiKey,
         score = flagsSet,
         seconds = seconds,

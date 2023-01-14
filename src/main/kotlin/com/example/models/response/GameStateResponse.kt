@@ -4,6 +4,8 @@ import kotlinx.serialization.SerialName
 
 @kotlinx.serialization.Serializable
 data class GameStateResponse(
+    @SerialName("roomName")
+    val roomName: String,
     @SerialName("gameState")
     val gameState: String, // could be: not_started, running, win, lose
     @SerialName("score")
