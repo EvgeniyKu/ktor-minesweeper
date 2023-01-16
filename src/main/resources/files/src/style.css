@@ -1,0 +1,190 @@
+body {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+		"Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+code {
+	font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+		monospace;
+}
+
+:root {
+	--var-size: 50px;
+}
+/* Указываем box sizing */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+/* Убираем внутренние отступы */
+ul[class],
+ol[class] {
+	padding: 0;
+}
+
+/* Убираем внешние отступы */
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+ul[class],
+ol[class],
+li,
+figure,
+figcaption,
+blockquote,
+dl,
+dd {
+	margin: 0;
+}
+
+/* Выставляем основные настройки по-умолчанию для body */
+body {
+	min-height: 100vh;
+	scroll-behavior: smooth;
+	text-rendering: optimizeSpeed;
+	line-height: 1.5;
+}
+
+/* Удаляем стандартную стилизацию для всех ul и il, у которых есть атрибут class*/
+ul[class],
+ol[class] {
+	list-style: none;
+}
+
+/* Элементы a, у которых нет класса, сбрасываем до дефолтных стилей */
+a:not([class]) {
+	text-decoration-skip-ink: auto;
+}
+
+/* Упрощаем работу с изображениями */
+img {
+	max-width: 100%;
+	display: block;
+}
+
+/* Указываем понятную периодичность в потоке данных у article*/
+article > * + * {
+	margin-top: 1em;
+}
+
+/* Наследуем шрифты для инпутов и кнопок */
+input,
+button,
+textarea,
+select {
+	font: inherit;
+}
+
+/* Удаляем все анимации и переходы для людей, которые предпочитай их не использовать */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+body {
+	font-family: sans-serif;
+}
+.flag {
+	background: url("assets/img/flag-solid.svg") no-repeat;
+	background-size: 50%;
+	background-position: center;
+}
+
+.panel {
+	display: flex;
+	flex-flow: row nowrap;
+	justify-content: space-between;
+	width: 50%;
+}
+.open {
+	background: #cbcbcb;
+}
+
+.bomb {
+	background: url("assets/img/bomb-solid.svg") red no-repeat;
+	background-size: 50%;
+	background-position: center;
+}
+.board {
+	position: relative;
+	display: inline-block;
+}
+.lose::after,
+.win::after {
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	position: absolute;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 3em;
+	text-transform: uppercase;
+	color: white;
+}
+.lose::after {
+	content: "Lose";
+	background: #ff000099;
+}
+.win::after {
+	content: "Win";
+	background: #9dff0099;
+}
+
+.wrapper {
+	position: relative;
+}
+#cursor_users {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.user {
+	position: absolute;
+	transition: 0.5s;
+	display: block;
+	width: 20px;
+	height: 20px;
+	background: #ffffffc7;
+	border: 1px solid #999;
+	opacity: 0.8;
+	border-radius: 100%;
+	transform: translate(-50%, -50%);
+}
+.user::before {
+	content: attr(data-username);
+	font-size: 12px;
+	color: black;
+	background: white;
+	padding: 0px 5px;
+	position: absolute;
+	left: 25px;
+}
+
+.panel__custom-name-game input {
+	width: 40px;
+}
+
+.cell {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 50px;
+	height: 50px;
+	border: solid 2px black;
+	margin: 5px;
+	font-size: 2em;
+}
