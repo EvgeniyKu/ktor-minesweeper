@@ -117,9 +117,20 @@ body {
 	background-size: 50%;
 	background-position: center;
 }
+.content-board {
+	height: 100vh;
+	overflow: scroll;
+	display: flex;
+	justify-content: center;
+}
 .board {
 	position: relative;
 	display: inline-block;
+}
+.content-sider {
+	font-size: 18px;
+	text-transform: uppercase;
+	padding: 15px;
 }
 .lose::after,
 .win::after {
