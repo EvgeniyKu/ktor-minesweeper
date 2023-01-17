@@ -1,6 +1,8 @@
 import { START_GAME } from "../../api/actionsSocket";
+import { useNavigate } from "react-router-dom";
 import socket from "../../socket";
 export default function Ui(props) {
+	const navigate = useNavigate();
 	return (
 		<div className="panel">
 			<div className="panel__left">
@@ -13,7 +15,10 @@ export default function Ui(props) {
 				<div id="panel__new-game" className="panel__new-game">
 					<button
 						data-difficulty="easy"
-						onClick={() => socket.send(JSON.stringify(START_GAME("easy")))}
+						onClick={() => {
+							socket.send(JSON.stringify(START_GAME("easy")));
+							navigate("/game");
+						}}
 					>
 						Easy
 					</button>
