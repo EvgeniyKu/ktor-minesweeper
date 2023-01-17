@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import socket from "../../socket";
 import { useSelector } from "react-redux";
 
-import { OPEN_CELL, SET_FLAG } from "../../api/actionsSocket";
+import { OPEN_CELL, SET_FLAG, START_GAME } from "../../api/actionsSocket";
 
 export default function Logic(Ui, props) {
 	const store = useSelector((store) => store.stateGame);
@@ -10,6 +10,7 @@ export default function Logic(Ui, props) {
 
 	const refBoard = useRef();
 	useEffect(() => {
+		const refCurrent = refBoard.current; //fix: notFoundContext
 		const handleBaseValidation = (fn) => {
 			return (event) => {
 				const { target } = event;
@@ -28,7 +29,7 @@ export default function Logic(Ui, props) {
 			socket.send(JSON.stringify(OPEN_CELL(row, column)));
 		};
 		const handleClickWithValidation = handleBaseValidation(handleClick);
-		refBoard.current.addEventListener("click", handleClickWithValidation);
+		refCurrent.addEventListener("click", handleClickWithValidation);
 
 		// CONTEXTMENU
 		const handleContextMenu = (row, column, event) => {
@@ -37,14 +38,12 @@ export default function Logic(Ui, props) {
 		};
 		const handleContextMenuWithValidation =
 			handleBaseValidation(handleContextMenu);
-		refBoard.current.addEventListener(
-			"contextmenu",
-			handleContextMenuWithValidation
-		);
+		refCurrent.addEventListener("contextmenu", handleContextMenuWithValidation);
 
 		return () => {
-			refBoard.current.removeEventListener("click", handleClickWithValidation);
-			refBoard.current.removeEventListener(
+			socket.send(JSON.stringify(START_GAME("easy"))); // при размонтирование говорим серверу "Игра закончилась"
+			refCurrent.removeEventListener("click", handleClickWithValidation);
+			refCurrent.removeEventListener(
 				"contextmenu",
 				handleContextMenuWithValidation
 			);
