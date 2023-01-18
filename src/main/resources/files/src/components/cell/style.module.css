@@ -10,7 +10,7 @@
 }
 
 .flag {
-	background: url("src/assets/img/flag-solid.svg") no-repeat;
+	background: url("./img/flag-solid.svg") no-repeat;
 	background-size: 50%;
 	background-position: center;
 }
@@ -20,7 +20,7 @@
 }
 
 .bomb {
-	background: url("src/assets/img/bomb-solid.svg") red no-repeat;
+	background: url("./img/bomb-solid.svg") red no-repeat;
 	background-size: 50%;
 	background-position: center;
 }
