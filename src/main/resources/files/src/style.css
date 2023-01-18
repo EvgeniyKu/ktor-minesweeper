@@ -96,27 +96,7 @@ select {
 body {
 	font-family: sans-serif;
 }
-.flag {
-	background: url("assets/img/flag-solid.svg") no-repeat;
-	background-size: 50%;
-	background-position: center;
-}
 
-.panel {
-	display: flex;
-	flex-flow: row nowrap;
-	justify-content: space-between;
-	width: 50%;
-}
-.open {
-	background: #cbcbcb;
-}
-
-.bomb {
-	background: url("assets/img/bomb-solid.svg") red no-repeat;
-	background-size: 50%;
-	background-position: center;
-}
 .content-board {
 	height: 100vh;
 	overflow: scroll;
@@ -155,9 +135,6 @@ body {
 	background: #9dff0099;
 }
 
-.wrapper {
-	position: relative;
-}
 #cursor_users {
 	position: absolute;
 	top: 0;
@@ -183,19 +160,4 @@ body {
 	padding: 0px 5px;
 	position: absolute;
 	left: 25px;
-}
-
-.panel__custom-name-game input {
-	width: 40px;
-}
-
-.cell {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	width: 50px;
-	height: 50px;
-	border: solid 2px black;
-	margin: 5px;
-	font-size: 2em;
 }

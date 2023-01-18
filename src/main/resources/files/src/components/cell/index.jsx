@@ -1,9 +1,10 @@
+import style from "./style.module.css";
 export default function Cell(props) {
 	const { idRow, idColumn, isOpened, isFlagged, countOfBombs } = props;
-	const classCell = ["cell"];
-	isOpened && classCell.push("open");
-	isFlagged && classCell.push("flag");
-	countOfBombs === 9 && classCell.push("bomb");
+	const classCell = [style.cell];
+	isOpened && classCell.push(style.open);
+	isFlagged && classCell.push(style.flag);
+	countOfBombs === 9 && classCell.push(style.bomb);
 	return (
 		<div
 			id="cell"
