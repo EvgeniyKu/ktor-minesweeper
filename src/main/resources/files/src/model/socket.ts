@@ -17,7 +17,11 @@ export class Socket implements SocketI {
 		this.socket = new WebSocket(url);
 	}
 	send(message: string): void {
-		this.socket.send(message);
+		if (this.readyState === 0) {
+			setTimeout(() => this.send(message), 1000);
+		} else if (this.readyState === 1) {
+			this.socket.send(message);
+		}
 	}
 	addEventListener(event: string, fn: any) {
 		this.socket.addEventListener(event, fn);
