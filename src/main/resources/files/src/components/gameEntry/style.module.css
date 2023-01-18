@@ -1,0 +1,6 @@
+.container > span {
+	display: inline-block;
+}
+.container > *:not(:last-child) {
+	margin-bottom: 10px;
+}
