@@ -34,7 +34,7 @@ class GameRoom(
         gamers += gamer
         logger.info("connect new gamer $gamer. Room $roomName contains ${gamers.size} gamers")
         with(gamer) {
-            sendMessage(MessageType.GameState, gameController.toResponse(name))
+            sendMessage(MessageType.GameState, gameController.toResponse(roomName))
             try {
                 val tickerJob = launch {
                     while (true) {
@@ -154,7 +154,7 @@ class GameRoom(
             Action.MousePosition -> throw IllegalArgumentException("action $action is not a game update action. It must be handled in other way")
         }.let { }
 
-        sendMessageForAll(MessageType.GameState, gameController.toResponse(name))
+        sendMessageForAll(MessageType.GameState, gameController.toResponse(roomName))
 
     }
 
