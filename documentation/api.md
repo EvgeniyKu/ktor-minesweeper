@@ -14,10 +14,10 @@
 
 **Response**
 
-```json
+```typescript
 {
- status: boolean
- message?: string
+	status: boolean
+	message?: string
 }
 ```
 
@@ -39,17 +39,17 @@
 ```http
 url: expample.com/?createroom
 params: {
-	nameRoom: string
-	difficulty: "easy" | "medium" | "hard"
+    nameRoom: string
+    difficulty: "easy" | "medium" | "hard"
 }
 ```
 
 **Response**
 
-```json
+```typescript
 {
- status: boolean
- message?: string
+	status: boolean
+	message?: string
 }
 ```
 
@@ -85,10 +85,10 @@ params: {
 
 **Response**
 
-```json
+```typescript
 {
- status: boolean
- message?: string
+	status: boolean
+	message?: string
 }
 ```
 
@@ -107,9 +107,9 @@ params: {
 }
 ```
 
-#Socket request
+# Socket request
 
-#Template
+# Template
 
 ## Title
 
@@ -121,9 +121,9 @@ code
 
 **Response**
 
-```json
+```typescript
 {
- code
+	code;
 }
 ```
 
