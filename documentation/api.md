@@ -1,32 +1,26 @@
-# Post request
-
-## Room join
+## RoomInfo
 
 **Request**
 
-```http
- url: expample.com/?roomjoin
- params: {
-	nameRoom: string
-	nameUser: string
- }
+`POST: /roominfo`
+
+**body:**
+
+```json
+{
+	"nameRoom": "string"
+}
 ```
 
 **Response**
 
-```typescript
-{
-	status: boolean
-	message?: string
-}
-```
-
-**Example response**
-
 ```json
 {
-	status:false
-	message: "room does not exist"
+	"isExist": "boolean",
+	"body": {
+		"roomName": "string",
+		"countUsers": "number"
+	}
 }
 ```
 
