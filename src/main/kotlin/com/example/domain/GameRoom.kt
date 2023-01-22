@@ -19,16 +19,19 @@ import kotlin.collections.LinkedHashSet
 
 class GameRoom(
     val roomName: String,
-    private val logger: Logger
+    private val logger: Logger,
+    initialSettings: GameSettings
 ) {
     private val gamers = Collections.synchronizedSet<Gamer?>(LinkedHashSet())
     private val gameUpdateMutex = Mutex()
-    private var gameController = GameController(GameSettings.EASY)
+    private var gameController = GameController(initialSettings)
     private val positionsController = PlayerPositionsController()
 
     val isEmpty: Boolean
         get() = gamers.isEmpty()
 
+    val gamersCount: Int
+        get() = gamers.size
 
     suspend fun connectNewGamer(gamer: Gamer) {
         gamers += gamer
