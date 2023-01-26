@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import style from "./style.module.css";
 import { Row, Col, Button } from "antd";
-export default function createGame(props) {
+
+import style from "./style.module.css";
+
+export default function createGame() {
 	const navigate = useNavigate();
 	return (
 		<Row className={style["indent"]} justify="space-around">

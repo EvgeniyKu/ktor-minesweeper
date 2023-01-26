@@ -1,6 +1,9 @@
-import { createSlice } from "@reduxjs/toolkit";
-const initialState = {
-	gameState: "",
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+import type { bodyForGameState } from "../api/typeSocket";
+
+const initialState: bodyForGameState = {
+	gameState: "not_started",
 	roomName: "anonymous",
 	score: 0,
 	seconds: 0,

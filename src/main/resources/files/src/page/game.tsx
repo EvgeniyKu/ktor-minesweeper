@@ -1,17 +1,23 @@
-import Board from "../components/board";
-import { Layout, Row, Col, Typography, Button } from "antd";
 import { useSelector } from "react-redux";
-import Timer from "../components/timer";
 import { useNavigate } from "react-router-dom";
+import { Layout, Row, Col, Typography, Button } from "antd";
+
+import Board from "../components/board";
+import Timer from "../components/timer";
 import socket from "../socket";
 import { START_GAME } from "../api/actionsSocket";
 
+import type { storeType } from "../store";
+
 const { Content, Sider } = Layout;
 const { Text } = Typography;
+
 export default function Game() {
 	const navigate = useNavigate();
-	const score = useSelector(({ stateGame }) => stateGame.score);
-	const gameState = useSelector(({ stateGame }) => stateGame.gameState);
+	const score = useSelector(({ stateGame }: storeType) => stateGame.score);
+	const gameState = useSelector(
+		({ stateGame }: storeType) => stateGame.gameState
+	);
 	const handleGoHome = () => {
 		navigate("/");
 	};
@@ -32,7 +38,6 @@ export default function Game() {
 								<Text style={{ fontSize: "20px" }}>Count flag: {score}</Text>
 							</Col>
 						</Row>
-
 						<Row>
 							<Col>
 								<Text style={{ fontSize: "20px" }}>

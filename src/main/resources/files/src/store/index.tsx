@@ -1,5 +1,9 @@
-import stateGame from "./stateGame";
+import stateGame, {stateGameType} from "./stateGame";
 import { configureStore } from "@reduxjs/toolkit";
+
+export type storeType = {
+	stateGame:stateGameType 
+}
 
 const store = configureStore({
 	reducer: {

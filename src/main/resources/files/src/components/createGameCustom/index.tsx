@@ -1,9 +1,11 @@
 import { Row, Col, Input, Button } from "antd";
+
 import style from "./style.module.css";
-export default function CreateGameCustom(props) {
+
+export default function CreateGameCustom() {
 	return (
 		<div className={style["create-game-custom"]}>
-			<Row className={style.indent} wrap={false} gutter={[10]}>
+			<Row className={style.indent} wrap={false} gutter={[10, 10]}>
 				<Col>
 					<Input addonBefore="Rows" defaultValue={5} type="number" min={5} />
 				</Col>

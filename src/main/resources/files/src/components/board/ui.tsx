@@ -1,7 +1,11 @@
-import { useMemo } from "react";
-import Cell from "../cell";
+import React, { useMemo } from "react";
 import { Row, Col } from "antd";
-export default function Ui(props) {
+
+import Cell from "../cell";
+
+import type { propsForUiType } from "./logic";
+
+export default function Ui(props: propsForUiType): React.ReactElement {
 	const { board, ref, gameState } = props;
 	const cells = useMemo(() => {
 		if (!Array.isArray(board)) {
@@ -19,8 +23,8 @@ export default function Ui(props) {
 				return (
 					<Col key={indexColumn}>
 						<Cell
-							idRow={rowIndexFromAPI}
-							idColumn={columnIndexFromAPI}
+							row={rowIndexFromAPI}
+							column={columnIndexFromAPI}
 							isOpened={isOpened}
 							isFlagged={isFlagged}
 							countOfBombs={countOfBombs}

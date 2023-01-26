@@ -1,6 +1,9 @@
 import style from "./style.module.css";
-export default function Cell(props) {
-	const { idRow, idColumn, isOpened, isFlagged, countOfBombs } = props;
+
+import type { cellType } from "../../api/typeSocket";
+
+export default function Cell(props: cellType) {
+	const { row, column, isOpened, isFlagged, countOfBombs } = props;
 	const classCell = [style.cell];
 	isOpened && classCell.push(style.open);
 	isFlagged && classCell.push(style.flag);
@@ -9,8 +12,8 @@ export default function Cell(props) {
 		<div
 			id="cell"
 			className={classCell.join(" ")}
-			data-row={idRow}
-			data-column={idColumn}
+			data-row={row}
+			data-column={column}
 		>
 			{countOfBombs && countOfBombs !== 9 ? countOfBombs : ""}
 		</div>
