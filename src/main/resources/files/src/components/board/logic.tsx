@@ -1,12 +1,18 @@
 import React, { useEffect, useRef, FC } from "react";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 
+import { setStateGame } from "../../store/stateGame";
 import { OPEN_CELL, SET_FLAG, START_GAME } from "../../api/actionsSocket";
 import socket from "../../socket";
 import { log } from "../../utils";
 
 import type { storeType } from "../../store";
-import type { bodyForGameState, board, gameState } from "../../api/typeSocket";
+import type {
+	bodyForGameState,
+	board,
+	gameState,
+	baseResponse,
+} from "../../api/typeSocket";
 import type { prop } from "./index";
 
 export default function Logic({
@@ -19,6 +25,24 @@ export default function Logic({
 		(store: storeType) => store.stateGame
 	);
 	const { board, gameState } = store;
+	const dispatch = useDispatch();
+
+	/* Handler mesage */
+	useEffect(() => {
+		const handlerMessage = (message: MessageEvent) => {
+			const data: baseResponse = JSON.parse(message.data);
+			switch (data["messageType"]) {
+				case "game_state":
+					const body = data["body"];
+					dispatch(setStateGame(body));
+					console.log("gameState", gameState);
+					console.log("body", body);
+					break;
+			}
+		};
+		socket.addEventListener("message", handlerMessage);
+		return () => socket.removeEventListener("message", handlerMessage);
+	}, []);
 
 	const refBoard = useRef() as React.MutableRefObject<HTMLDivElement>;
 	useEffect(() => {
