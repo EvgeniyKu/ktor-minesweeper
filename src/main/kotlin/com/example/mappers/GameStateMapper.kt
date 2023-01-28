@@ -1,9 +1,10 @@
 package com.example.mappers
 
+import com.example.Gamer
 import com.example.domain.GameController
 import com.example.models.response.GameStateResponse
 
-fun GameController.toResponse(roomName: String): GameStateResponse {
+fun GameController.toResponse(roomName: String, gamers: List<Gamer>): GameStateResponse {
     return GameStateResponse(
         roomName = roomName,
         gameState = gameState.apiKey,
@@ -21,9 +22,18 @@ fun GameController.toResponse(roomName: String): GameStateResponse {
                         else cell.bombsNear
                     } else {
                         null
-                    }
+                    },
+                    playerId = cell.userId
                 )
             }
-        }
+        },
+        players = getUsersSummary().map { (id, summary) ->
+            GameStateResponse.PlayerInfo(
+                playerId = id,
+                openedCells = summary.openedCellsCount,
+                toggledFlags = summary.toggledCellsCount
+            )
+        },
+        lastInteractedUserId = lastInteractedUserId
     )
 }

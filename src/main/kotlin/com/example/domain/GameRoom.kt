@@ -14,13 +14,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import org.slf4j.Logger
+import java.awt.Color
 import java.util.*
 import kotlin.collections.LinkedHashSet
 
 class GameRoom(
     val roomName: String,
     private val logger: Logger,
-    initialSettings: GameSettings
+    private val initialSettings: GameSettings
 ) {
     private val gamers = Collections.synchronizedSet<Gamer?>(LinkedHashSet())
     private val gameUpdateMutex = Mutex()
@@ -37,7 +38,8 @@ class GameRoom(
         gamers += gamer
         logger.info("connect new gamer $gamer. Room $roomName contains ${gamers.size} gamers")
         with(gamer) {
-            sendMessage(MessageType.GameState, gameController.toResponse(roomName))
+            sendMessage(MessageType.GameState, gameController.toResponse(roomName, gamers.toList()))
+            sendMessage(MessageType.PlayersChanged, gamers.toResponse())
             try {
                 val tickerJob = launch {
                     while (true) {
@@ -53,12 +55,10 @@ class GameRoom(
                         .distinctUntilChanged()
                         .collect {
                             val playerPositions = it.mapNotNull map@{ (id, position) ->
-                                val itGamer = gamers.firstOrNull { it.connectionId == id }
-                                    ?: return@map null
                                 PlayersPosition.Position(
                                     x = position.x,
                                     y = position.y,
-                                    player = Player(id, itGamer.name)
+                                    playerId = id
                                 )
                             }
                             if (playerPositions.isNotEmpty()) {
@@ -76,8 +76,30 @@ class GameRoom(
             } finally {
                 positionsController.removePlayer(gamer.connectionId)
                 gamers -= gamer
+                withContext(NonCancellable) {
+                    sendMessageForAll(MessageType.PlayersChanged, gamers.toResponse(), excludeSelf = true)
+                }
                 logger.info("Gamer $gamer disconnected. Already connected: ${gamers.size} gamers")
             }
+        }
+    }
+
+    fun generateColorForNewUser(): String {
+        val availableColors = setOf<String>(
+            "#4a4e4d",
+            "#0e9aa7",
+            "#f6cd61",
+            "#fe8a71",
+            "#009688",
+            "#f37736",
+            "#854442"
+        )
+        val currentUsedColors = gamers.map { it.color }.toSet()
+        val freeColors = availableColors - currentUsedColors
+        return if (freeColors.isEmpty()) {
+            availableColors.random()
+        } else {
+            freeColors.random()
         }
     }
 
@@ -128,36 +150,21 @@ class GameRoom(
     private suspend fun Gamer.handleGameUpdateAction(action: Action, bodyElement: JsonElement) {
         logger.info("user $this make action ${action.apiKey} with params: $bodyElement")
         when(action) {
-            Action.StartGame -> {
-                val body = parseJsonBody<StartGameBody>(bodyElement)
-                val difficulty = when(body.difficulty) {
-                    "easy" -> GameSettings.EASY
-                    "medium" -> GameSettings.MEDIUM
-                    "hard" -> GameSettings.EXPERT
-                    else -> throw IllegalArgumentException("unknown difficulty: ${body.difficulty}. Expected: easy, medium, hard")
-                }
-                gameController = GameController(difficulty)
-            }
-            Action.StartCustomGame -> {
-                val body = parseJsonBody<StartCustomGameBody>(bodyElement)
-                gameController = GameController(GameSettings(body.rows, body.columns, body.bombs))
+            Action.Restart -> {
+                gameController = GameController(initialSettings)
             }
             Action.OpenCell -> {
                 val body = parseJsonBody<CellPositionBody>(bodyElement)
-                val cell = gameController.cellAt(body.row, body.column)
-                    ?: throw IllegalArgumentException("missing cell at row: ${body.row} and column ${body.column}")
-                gameController.openCell(cell)
+                gameController.openCell(body.row, body.column, connectionId)
             }
             Action.SetFlag -> {
                 val body = parseJsonBody<CellPositionBody>(bodyElement)
-                val cell = gameController.cellAt(body.row, body.column)
-                    ?: throw IllegalArgumentException("missing cell at row: ${body.row} and column ${body.column}")
-                gameController.toggleFlag(cell)
+                gameController.toggleFlag(body.row, body.column, connectionId)
             }
             Action.MousePosition -> throw IllegalArgumentException("action $action is not a game update action. It must be handled in other way")
         }.let { }
 
-        sendMessageForAll(MessageType.GameState, gameController.toResponse(roomName))
+        sendMessageForAll(MessageType.GameState, gameController.toResponse(roomName, gamers.toList()))
 
     }
 

@@ -26,7 +26,11 @@ class RoomsController(private val logger: Logger) {
     suspend fun connect(session: WebSocketServerSession, request: ConnectRequest) {
         val room = getRoom(request.roomName)
             ?: error("room ${request.roomName} not found")
-        val gamer = Gamer(session, request.playerName)
+        val gamer = Gamer(
+            session = session,
+            name = request.playerName,
+            color = room.generateColorForNewUser()
+        )
         room.connectNewGamer(gamer)
         if (room.isEmpty) {
             rooms -= room

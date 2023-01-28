@@ -7,6 +7,7 @@ class Gamer private constructor(
     val connectionId: Long,
     val session: WebSocketServerSession,
     val name: String,
+    val color: String,
 ): WebSocketServerSession by session {
 
     override fun equals(other: Any?): Boolean {
@@ -25,11 +26,12 @@ class Gamer private constructor(
     companion object {
         private var lastId = AtomicLong(0)
 
-        operator fun invoke(session: WebSocketServerSession, name: String): Gamer {
+        operator fun invoke(session: WebSocketServerSession, name: String, color: String): Gamer {
             return Gamer(
                 connectionId = lastId.incrementAndGet(),
                 session = session,
-                name = name
+                name = name,
+                color = color
             )
         }
     }

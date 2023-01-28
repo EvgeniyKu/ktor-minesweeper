@@ -14,5 +14,6 @@ enum class MessageType(val apiKey: String) {
     GameState("game_state"),
     Error("error"),
     Tick("tick"),
-    PlayerPosition("player_positions")
+    PlayerPosition("player_positions"),
+    PlayersChanged("players_changed")
 }
