@@ -13,7 +13,7 @@ data class PlayersPosition(
         val x: Int,
         @SerialName("y")
         val y: Int,
-        @SerialName("player")
-        val player: Player
+        @SerialName("playerId")
+        val playerId: Long
     )
 }

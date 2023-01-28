@@ -1,8 +1,7 @@
 package com.example.models.request
 
 enum class Action(val apiKey: String) {
-    StartGame("startGame"),
-    StartCustomGame("startCustomGame"),
+    Restart("restart"),
     OpenCell("openCell"),
     SetFlag("setFlag"),
     MousePosition("mousePosition"),

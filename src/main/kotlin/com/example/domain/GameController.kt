@@ -56,6 +56,9 @@ class GameController(private val options: GameSettings) {
 
     private var isFirstOpenedCell = true
 
+    var lastInteractedUserId: Long? = null
+        private set
+
     init {
         // validate options
         check(options.rows * options.columns > bombs) {
@@ -73,7 +76,7 @@ class GameController(private val options: GameSettings) {
     /**
      * Get cell at given position, or null if any index is out of bounds
      */
-    fun cellAt(row: Int, column: Int) = cells.getOrNull(row)?.getOrNull(column)
+    private fun cellAt(row: Int, column: Int) = cells.getOrNull(row)?.getOrNull(column)
 
     /**
      * Open given cell:
@@ -86,13 +89,18 @@ class GameController(private val options: GameSettings) {
      *
      * @param cell Cell to open, **must** belong to current game board
      */
-    fun openCell(cell: Cell) {
+    fun openCell(row: Int, column: Int, userId: Long?) {
+        val cell = cellAt(row, column)
+            ?: throw IllegalArgumentException("missing cell at row: $row and column $column")
+
         if (finished || cell.isOpened || cell.isFlagged) return
         if (!running) {
             startGame()
         }
 
         cell.isOpened = true
+        cell.userId = userId
+        lastInteractedUserId = userId
         if (cell.hasBomb) {
             if (isFirstOpenedCell) {
                 ensureNotLoseAtFirstClick(cell)
@@ -111,7 +119,7 @@ class GameController(private val options: GameSettings) {
 
         if (cell.bombsNear == 0) {
             neighborsOf(cell).forEach {
-                openCell(it)
+                openCell(it.row, it.column, null)
             }
         }
     }
@@ -124,17 +132,46 @@ class GameController(private val options: GameSettings) {
      *
      * @param cell Cell to toggle flag, **must** belong to current game board
      */
-    fun toggleFlag(cell: Cell) {
+    fun toggleFlag(row: Int, column: Int, userId: Long?) {
+        val cell = cellAt(row, column)
+            ?: throw IllegalArgumentException("missing cell at row: $row and column $column")
         if (finished || cell.isOpened) return
         if (!running) {
             startGame()
         }
 
         cell.isFlagged = !cell.isFlagged
+        cell.userId = userId
+        lastInteractedUserId = userId
         if (cell.isFlagged) {
             flagsSet += 1
         } else {
             flagsSet -= 1
+        }
+    }
+
+    fun getUsersSummary(): Map<Long, UserBoardSummary> {
+        val openedCellsByUser = mutableMapOf<Long, Int>()
+        val toggledCellsByUser = mutableMapOf<Long, Int>()
+
+        cells.flatten().forEach { cell ->
+            val userId = cell.userId
+            if (userId != null) {
+                if (cell.isOpened) {
+                    val currentOpenedCount = openedCellsByUser[userId] ?: 0
+                    openedCellsByUser[userId] = currentOpenedCount + 1
+                } else if (cell.isFlagged) {
+                    val currentToggledCount = toggledCellsByUser[userId] ?: 0
+                    toggledCellsByUser[userId] = currentToggledCount + 1
+                }
+            }
+        }
+        val allUsers = openedCellsByUser.keys + toggledCellsByUser.keys
+        return allUsers.associateWith { id ->
+            UserBoardSummary(
+                openedCellsCount = openedCellsByUser[id] ?: 0,
+                toggledCellsCount = toggledCellsByUser[id] ?: 0
+            )
         }
     }
 
@@ -265,4 +302,10 @@ class Cell(val row: Int, val column: Int) {
     var isOpened = false
     var isFlagged = false
     var bombsNear = 0
+    var userId: Long? = null
 }
+
+class UserBoardSummary(
+    val openedCellsCount: Int,
+    val toggledCellsCount: Int
+)
