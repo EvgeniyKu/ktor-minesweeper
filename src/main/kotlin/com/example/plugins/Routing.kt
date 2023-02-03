@@ -29,9 +29,9 @@ fun Application.configureRouting() {
             resources("files")
         }
 
-        post("/roominfo") {
-            val request = call.receive<RoomInfoRequest>()
-            val room = roomsController.getRoom(request.nameRoom)
+        get("/roominfo") {
+            val nameRoom = call.request.queryParameters.require("nameRoom")
+            val room = roomsController.getRoom(nameRoom)
             if (room == null) {
                 call.respond(RoomInfoResponse(false, null))
             } else {
@@ -39,8 +39,20 @@ fun Application.configureRouting() {
             }
         }
 
-        post("/createroom") {
-            val request = call.receive<RoomCreateRequest>()
+        get("/createroom") {
+            val request = with(call.request.queryParameters) {
+                RoomCreateRequest(
+                    roomName = require("nameRoom"),
+                    difficulty = get("difficulty"),
+                    settings = get("rows")?.let { rows ->
+                        RoomCreateRequest.Settings(
+                            rows = rows.toInt(),
+                            columns = require("columns").toInt(),
+                            bombs = require("bombs").toInt()
+                        )
+                    }
+                )
+            }
             try {
                 if (roomsController.getRoom(request.roomName) != null) {
                     error("room ${request.roomName} already exist")
@@ -103,4 +115,9 @@ private suspend inline fun WebSocketServerSession.handleExceptions(block: () -> 
         sendSerialized(message)
         throw t
     }
+}
+
+private fun Parameters.require(name: String): String {
+    return get(name)
+        ?: error("$name should be specified in query parameters")
 }
