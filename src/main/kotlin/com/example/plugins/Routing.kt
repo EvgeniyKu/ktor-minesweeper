@@ -4,19 +4,13 @@ import com.example.domain.GameSettings
 import com.example.domain.RoomsController
 import com.example.models.request.ConnectRequest
 import com.example.models.request.RoomCreateRequest
-import com.example.models.request.RoomInfoRequest
 import com.example.models.response.*
-import io.ktor.server.routing.*
 import io.ktor.http.*
-import io.ktor.serialization.kotlinx.*
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
 import io.ktor.server.response.*
-import io.ktor.server.request.*
+import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
-import kotlinx.serialization.json.Json
-import java.time.Duration
-import kotlin.math.min
 
 fun Application.configureRouting() {
     routing {

@@ -39,7 +39,7 @@ class GameRoom(
         logger.info("connect new gamer $gamer. Room $roomName contains ${gamers.size} gamers")
         with(gamer) {
             sendMessage(MessageType.GameState, gameController.toResponse(roomName, gamers.toList()))
-            sendMessage(MessageType.PlayersChanged, gamers.toResponse())
+            sendMessageForAll(MessageType.PlayersChanged, gamers.toResponse())
             try {
                 val tickerJob = launch {
                     while (true) {
