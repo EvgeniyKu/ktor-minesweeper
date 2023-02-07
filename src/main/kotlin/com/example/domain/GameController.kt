@@ -119,7 +119,7 @@ class GameController(private val options: GameSettings) {
 
         if (cell.bombsNear == 0) {
             neighborsOf(cell).forEach {
-                openCell(it.row, it.column, null)
+                openCell(it.row, it.column, userId)
             }
         }
     }
